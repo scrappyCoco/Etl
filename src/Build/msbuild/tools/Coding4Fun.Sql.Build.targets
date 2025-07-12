@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <C4FSqlBuildDll>$([MSBuild]::EnsureTrailingSlash($(MSBuildThisFileDirectory)net8.0))Coding4Fun.Sql.Build.dll</C4FSqlBuildDll>
+    </PropertyGroup>
+
+  <UsingTask TaskName="BuildEltTask" TaskFactory="TaskHostFactory" AssemblyFile="$(C4FSqlBuildDll)" />
+
+  <Target Name="BuildEtlTask" AfterTargets="SqlBuild">
+    <PropertyGroup>
+        <C4FEtlGeneratorTargetDacPacPath Condition="'$(C4FEtlGeneratorTargetDacPacPath)' == ''">$(SqlTargetPath)</C4FEtlGeneratorTargetDacPacPath>
+        <C4FEtlGeneratorSourceDacPacPath Condition="'$(C4FEtlGeneratorSourceDacPacPath)' == ''">@(ArtifactReference->'%(HintPath)')</C4FEtlGeneratorSourceDacPacPath>
+        <C4FEtlGeneratorOutputEtlConfig Condition="'$(C4FEtlGeneratorOutputEtlConfig)' == ''">$(TargetDir)Etl</C4FEtlGeneratorOutputEtlConfig>
+    </PropertyGroup>
+
+    <BuildEltTask C4FEtlGeneratorSourceDacPacPath="$(C4FEtlGeneratorSourceDacPacPath)"
+                  C4FEtlGeneratorTargetDacPacPath="$(C4FEtlGeneratorTargetDacPacPath)"
+                  C4FEtlGeneratorOutputEtlConfig="$(C4FEtlGeneratorOutputEtlConfig)" />
+  </Target>
+</Project>
