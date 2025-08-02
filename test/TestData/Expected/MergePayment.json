@@ -1,0 +1,122 @@
+{
+  "ProcedureName": "MergePayment",
+  "EtlSql": "BEGIN\r\n    INSERT INTO dbo.Currency (IsoCode)\r\n    SELECT Currency\r\n    FROM   #Payment\r\n    EXCEPT\r\n    SELECT IsoCode\r\n    FROM   dbo.Currency;\r\n    DECLARE @modifiedPayment TABLE (\r\n        PaymentId UNIQUEIDENTIFIER);\r\n    MERGE INTO dbo.Payment\r\n     AS Target\r\n    USING (SELECT Payment.PaymentId,\r\n                  Payment.Amount,\r\n                  Currency.CurrencyId,\r\n                  Payment.BatchDt AS ModifyDt\r\n           FROM   #Payment AS Payment\r\n                  INNER JOIN\r\n                  dbo.Currency\r\n                  ON Currency.IsoCode = Payment.Currency) AS Source ON Source.PaymentId = Target.PaymentId\r\n    WHEN NOT MATCHED THEN INSERT (PaymentId, Amount, CurrencyId, ModifyDt) VALUES (Source.PaymentId, Source.Amount, Source.CurrencyId, Source.ModifyDt)\r\n    WHEN MATCHED AND Target.ModifyDt \u003C Source.ModifyDt THEN UPDATE \r\n    SET Target.Amount     = Source.Amount,\r\n        Target.CurrencyId = Source.CurrencyId\r\n    OUTPUT INSERTED.PaymentId INTO @modifiedPayment (PaymentId);\r\n    DELETE Target\r\n    FROM   dbo.PaymentItem AS Target\r\n    WHERE  Target.PaymentId IN (SELECT ModifiedPayment.PaymentId\r\n                                FROM   @modifiedPayment AS ModifiedPayment);\r\n    INSERT INTO dbo.PaymentItem (PaymentId, ItemNumber, Article, Quantity, Price)\r\n    SELECT PaymentId,\r\n           ItemNumber,\r\n           Article,\r\n           Quantity,\r\n           Price\r\n    FROM   #PaymentItem AS PaymentItem\r\n    WHERE  PaymentItem.PaymentId IN (SELECT ModifiedPayment.PaymentId\r\n                                     FROM   @modifiedPayment AS ModifiedPayment);\r\nEND",
+  "TableDefinitions": [
+    {
+      "StageTableName": "stage.Payment",
+      "TempTableName": "#Payment",
+      "IsMain": true,
+      "SelectStatement": "SELECT TOP (1005) WITH TIES [BatchDt], [BatchRowId], [PaymentId], [Amount], [Currency]\r\nFROM stage.Payment WHERE @Min BatchDt\r\nORDER BY BatchDt ASC;",
+      "CreateTempTableStatement": "CREATE TABLE #Payment (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [PaymentId] uniqueidentifier NOT NULL,     [Amount] decimal NOT NULL,     [Currency] char(3) NOT NULL);",
+      "SelectBatchSTatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #Payment",
+      "Columns": [
+        {
+          "Name": "BatchDt",
+          "DataType": "datetime2",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "BatchRowId",
+          "DataType": "bigint",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "PaymentId",
+          "DataType": "uniqueidentifier",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "Amount",
+          "DataType": "decimal",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 20
+        },
+        {
+          "Name": "Currency",
+          "DataType": "char",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 3,
+          "Precision": 0
+        }
+      ]
+    },
+    {
+      "StageTableName": "stage.PaymentItem",
+      "TempTableName": "#PaymentItem",
+      "IsMain": false,
+      "SelectStatement": "SELECT [BatchDt], [BatchRowId], [PaymentId], [ItemNumber], [Article], [Quantity], [Price] FROM stage.PaymentItem WHERE BatchDt BETWEEN @Min AND @Max;",
+      "CreateTempTableStatement": "CREATE TABLE #PaymentItem (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [PaymentId] uniqueidentifier NOT NULL,     [ItemNumber] int NOT NULL,     [Article] varchar(50) NOT NULL,     [Quantity] int NOT NULL,     [Price] decimal NOT NULL);",
+      "SelectBatchSTatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #PaymentItem",
+      "Columns": [
+        {
+          "Name": "BatchDt",
+          "DataType": "datetime2",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "BatchRowId",
+          "DataType": "bigint",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "PaymentId",
+          "DataType": "uniqueidentifier",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "ItemNumber",
+          "DataType": "int",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "Article",
+          "DataType": "varchar",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 50,
+          "Precision": 0
+        },
+        {
+          "Name": "Quantity",
+          "DataType": "int",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 0
+        },
+        {
+          "Name": "Price",
+          "DataType": "decimal",
+          "IsNullable": false,
+          "IsMax": false,
+          "Length": 0,
+          "Precision": 18
+        }
+      ]
+    }
+  ]
+}
