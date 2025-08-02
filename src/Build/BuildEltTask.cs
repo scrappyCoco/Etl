@@ -1,24 +1,70 @@
 using System.Diagnostics.Contracts;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Antlr4.StringTemplate;
+using Coding4Fun.Etl.Build.Services.Dacpac;
+using Coding4Fun.Etl.Build.Services.IO;
 using Coding4Fun.Etl.Common;
 using Coding4Fun.TransactSql.Analyzers.Visitors;
+using Microsoft.SqlServer.Dac;
 using Microsoft.SqlServer.Dac.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using ColumnDefinition = Coding4Fun.Etl.Common.ColumnDefinition;
 using TableDefinition = Coding4Fun.Etl.Common.TableDefinition;
 
+/// <summary>
+/// MSBuild task for generating ETL configuration pipelines from SQL objects in DACPAC files.
+/// </summary>
+/// <remarks>
+/// This task analyzes stored procedures in target DACPAC, extracts metadata using regex markers,
+/// and generates ETL pipeline configurations with batch processing logic.
+/// </remarks>
 public class BuildEltTask : Microsoft.Build.Utilities.Task
 {
+    /// <summary>
+    /// Regex pattern to identify main table reference markers in SQL code.
+    /// Format: C4F.ETL.MainTable: [value]
+    /// </summary>
     private readonly Regex MainTableMarkerRegex = new("C4F[.]ETL[.]MainTable:\\s*(?<value>\\S+)", RegexOptions.Compiled);
-    private readonly Regex BatchSizeMarkerRegex = new("C4F[.]ETL[.]BatchSize:\\s*(?<value>\\S+)", RegexOptions.Compiled);
-    public string? C4FEtlGeneratorSourceDacPacPath { get; set; }
-    public string? C4FEtlGeneratorTargetDacPacPath { get; set; }
-    public string? C4FEtlGeneratorOutputEtlConfig { get; set; }
-    public string C4FEtlGeneratorSourceConnectionString { get; set; } = @"Server=localhost;Database=StageDb;Integrated Security=True;TrustServerCertificate=True";
-    public string C4FEtlGeneratorTargetConnectionString { get; set; } = @"Server=localhost;Database=CoreDb;Integrated Security=True;TrustServerCertificate=True";
 
+    /// <summary>
+    /// Regex pattern to identify batch size markers in SQL code.
+    /// Format: C4F.ETL.BatchSize: [value]
+    /// </summary>
+    private readonly Regex BatchSizeMarkerRegex = new("C4F[.]ETL[.]BatchSize:\\s*(?<value>\\S+)", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Path to the source DACPAC file containing database schema definitions.
+    /// </summary>
+    /// <value>Must be a valid DACPAC file path</value>
+    public string? C4FEtlGeneratorSourceDacPacPath { get; set; }
+
+    /// <summary>
+    /// Path to the target DACPAC file containing stored procedures to analyze.
+    /// </summary>
+    /// <value>Must be a valid DACPAC file path</value>
+    public string? C4FEtlGeneratorTargetDacPacPath { get; set; }
+
+    /// <summary>
+    /// Output directory path for generated ETL configuration JSON files.
+    /// </summary>
+    /// <value>Directory will be created if it doesn't exist</value>
+    public string? C4FEtlGeneratorOutputEtlConfig { get; set; }
+
+    /// <summary>
+    /// SQL model loader implementation for DACPAC file processing.
+    /// </summary>
+    internal ISqlModelLoader ModelLoader { get; set; } = new SqlModelLoader();
+
+    /// <summary>
+    /// File system operations provider for directory and file manipulation.
+    /// </summary>
+    internal IFileSystemProvider FileSystemProvider { get; set; } = new DefaultFileSystemProvider();
+
+    /// <summary>
+    /// Executes the MSBuild task workflow.
+    /// </summary>
+    /// <returns>True if execution completed successfully, false otherwise</returns>
     public override bool Execute()
     {
         if (string.IsNullOrWhiteSpace(C4FEtlGeneratorSourceDacPacPath))
@@ -39,10 +85,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             return false;
         }
 
-        if (!Directory.Exists(C4FEtlGeneratorOutputEtlConfig))
-        {
-            Directory.CreateDirectory(C4FEtlGeneratorOutputEtlConfig);
-        }
+        FileSystemProvider.CreateDirectory(C4FEtlGeneratorOutputEtlConfig);
 
         Log.LogMessage($"{nameof(C4FEtlGeneratorSourceDacPacPath)}: \"{C4FEtlGeneratorSourceDacPacPath}\"");
         Log.LogMessage($"{nameof(C4FEtlGeneratorTargetDacPacPath)}: \"{C4FEtlGeneratorTargetDacPacPath}\"");
@@ -59,18 +102,22 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             string outputConfigFileName = pipelineConfiguration.ProcedureName + ".json";
             string outputJsonPath = Path.Combine(C4FEtlGeneratorOutputEtlConfig, outputConfigFileName);
             string json = JsonSerializer.Serialize(pipelineConfiguration, options);
-            File.WriteAllText(outputJsonPath, json);
+            FileSystemProvider.WriteAllText(outputJsonPath, json);
         }
 
         return true;
     }
 
+    /// <summary>
+    /// Generates ETL pipeline configurations from target DACPAC stored procedures.
+    /// </summary>
+    /// <returns>Array of generated pipeline configurations</returns>
     private PipelineConfiguration[] Generate()
     {
         List<PipelineConfiguration> pipelineConfigurations = [];
         Sql160ScriptGenerator generator = new();
-        TSqlModel sourceModel = new(C4FEtlGeneratorSourceDacPacPath);
-        TSqlModel targetModel = new(C4FEtlGeneratorTargetDacPacPath);
+        TSqlModel sourceModel = ModelLoader.Load(C4FEtlGeneratorSourceDacPacPath);
+        TSqlModel targetModel = ModelLoader.Load(C4FEtlGeneratorTargetDacPacPath);
         IEnumerable<TSqlObject> storedProcedures = targetModel.GetObjects(DacQueryScopes.UserDefined, ModelSchema.Procedure);
         foreach (TSqlObject procedure in storedProcedures)
         {
@@ -166,8 +213,6 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             generator.GenerateScript(beginEndBlock, out string patchedProcedure);
             PipelineConfiguration pipelineConfiguration = new()
             {
-                SourceConnectionString = C4FEtlGeneratorSourceConnectionString,
-                TargetConnectionString = C4FEtlGeneratorTargetConnectionString,
                 ProcedureName = procedure.Name.Parts.Last(),
                 TableDefinitions = tableDefinitions.ToArray(),
                 EtlSql = patchedProcedure
@@ -177,62 +222,84 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
         return pipelineConfigurations.ToArray();
     }
 
+    /// <summary>
+    /// Generates a SELECT statement for main tables with TOP and TIES clause.
+    /// </summary>
+    /// <param name="tableName">Fully qualified table name (schema.table)</param>
+    /// <param name="columns">Array of column definitions</param>
+    /// <param name="batchSize">Number of records to select per batch</param>
+    /// <returns>Formatted SQL SELECT statement</returns>
     static string GenerateSelectStatementForMainTable(string tableName, ColumnDefinition[] columns, int batchSize)
     {
-        StringBuilder selectBuilder = new StringBuilder("SELECT TOP (").Append(batchSize).Append(") WITH TIES ").AppendLine();
-        for (int i = 0; i < columns.Length; i++)
-        {
-            ColumnDefinition columnDefinition = columns[i];
-            selectBuilder.Append($"[{columnDefinition.Name}]");
-            if (i < columns.Length - 1) selectBuilder.Append(", ");
-            else selectBuilder.AppendLine();
-        }
-        selectBuilder.Append("FROM ").Append(tableName).AppendLine();
-        selectBuilder.Append("WHERE @Min < ").Append(columns[0].Name).AppendLine();
-        selectBuilder.AppendFormat("ORDER BY {0} ASC", columns[0].Name);
-        return selectBuilder.ToString();
+        Template template = new("""
+            SELECT TOP (<batchSize>) WITH TIES <columns: {col | <col.name>}; separator=", ">
+            FROM <tableName> WHERE @Min < <firstColumnName>
+            ORDER BY <firstColumnName> ASC;
+            """);
+
+        var columnNames = columns.Select(col => new { name = $"[{col.Name}]" }).ToList();
+        string firstColumnName = columns[0].Name;
+
+        template.Add("batchSize", batchSize);
+        template.Add("columns", columnNames);
+        template.Add("tableName", tableName);
+        template.Add("firstColumnName", firstColumnName);
+
+        return template.Render();
     }
 
+    /// <summary>
+    /// Generates a SELECT statement for secondary tables with range filtering.
+    /// </summary>
+    /// <param name="tableName">Fully qualified table name (schema.table)</param>
+    /// <param name="columns">Array of column definitions</param>
+    /// <returns>Formatted SQL SELECT statement</returns>
     static string GenerateSelectStatementForSecondaryTable(string tableName, ColumnDefinition[] columns)
     {
-        StringBuilder selectBuilder = new StringBuilder("SELECT ").AppendLine();
-        for (int i = 0; i < columns.Length; i++)
-        {
-            ColumnDefinition columnDefinition = columns[i];
-            selectBuilder.Append($"[{columnDefinition.Name}]");
-            if (i < columns.Length - 1) selectBuilder.Append(", ");
-            else selectBuilder.AppendLine();
-        }
-        selectBuilder.Append("FROM ").Append(tableName).AppendLine();
-        selectBuilder.Append("WHERE ").Append(columns[0].Name).Append(" BETWEEN @Min AND @Max;");
-        return selectBuilder.ToString();
+        Template template = new(
+            "SELECT <columns: {col | <col.name>}; separator=\", \"> FROM <tableName> WHERE <firstColumnName> BETWEEN @Min AND @Max;");
+
+        var columnNames = columns.Select(col => new { name = $"[{col.Name}]" }).ToList();
+        string firstColumnName = columns[0].Name;
+
+        template.Add("columns", columnNames);
+        template.Add("tableName", tableName);
+        template.Add("firstColumnName", firstColumnName);
+
+        return template.Render();
     }
 
+    /// <summary>
+    /// Generates CREATE TABLE statement for temporary tables.
+    /// </summary>
+    /// <param name="tempTableName">Name of the temporary table</param>
+    /// <param name="columns">Array of column definitions</param>
+    /// <returns>Formatted SQL CREATE TABLE statement</returns>
     static string GenerateCreateTableDefinition(string tempTableName, ColumnDefinition[] columns)
     {
-        StringBuilder stringBuilder = new();
-        stringBuilder.AppendLine("CREATE TABLE " + tempTableName + " (");
-        for (int i = 0; i < columns.Length; i++)
-        {
-            ColumnDefinition columnDefinition = columns[i];
-            stringBuilder.Append($"    [{columnDefinition.Name}] {columnDefinition.DataType}");
-            if (columnDefinition.IsMax) stringBuilder.Append($"(MAX)");
-            else if (0 < columnDefinition.Length)
-            {
-                stringBuilder.Append('(');
-                stringBuilder.Append(columnDefinition.Length);
-                if (0 < columnDefinition.Precision) stringBuilder.Append(", ").Append(columnDefinition.Length);
-                stringBuilder.Append(')');
-            }
-            if (columnDefinition.IsNullable) stringBuilder.Append(" NULL");
-            else stringBuilder.Append(" NOT NULL");
-            if (i < columns.Length - 1) stringBuilder.AppendLine(",");
-            else stringBuilder.AppendLine();
-        }
-        stringBuilder.AppendLine(");");
-        return stringBuilder.ToString();
+        Template template = new(
+            "CREATE TABLE <tempTableName> (<columns: {col | <col.line>}; separator=\", \">);"
+        );
+
+        var columnLines = columns.Select(col =>
+            $"    [{col.Name}] {col.DataType}" +
+            (col.IsMax ? "(MAX)" :
+                col.Length > 0 ? $"({col.Length}{(col.Precision > 0 ? $", {col.Length}" : "")})" : "") +
+            (col.IsNullable ? " NULL" : " NOT NULL")
+        ).ToList();
+
+        template.Add("tempTableName", tempTableName);
+        template.Add("columns", columnLines.Select(line => new { line }).ToList());
+
+        return template.Render();
     }
 
+    /// <summary>
+    /// Generates SELECT statement for retrieving min/max values from temporary tables.
+    /// </summary>
+    /// <param name="tempTableName">Name of the temporary table</param>
+    /// <param name="columnName">Name of the column to analyze</param>
+    /// <returns>Formatted SQL SELECT statement</returns>
     static string GenerateSelectMinMaxStatement(string tempTableName, string columnName) =>
         $"SELECT MIN({columnName}) AS MinValue, MAX({columnName}) AS MaxValue FROM {tempTableName}";
 
@@ -291,6 +358,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// </summary>
     public class TableReferenceComparer : IEqualityComparer<NamedTableReference>
     {
+        /// <inheritdoc />
         public bool Equals(NamedTableReference? x, NamedTableReference? y)
         {
             if (ReferenceEquals(x, y)) return true;
@@ -306,6 +374,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             return true;
         }
 
+        /// <inheritdoc />
         public int GetHashCode(NamedTableReference obj)
         {
             return string.Join(".", obj.SchemaObject.Identifiers.Select(i => i.Value)).GetHashCode();
