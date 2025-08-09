@@ -2,6 +2,7 @@
 using System.Data;
 using System.Text.Json;
 using Coding4Fun.Etl.Common;
+using Gibraltar.DistributedLocking;
 using Microsoft.Extensions.Logging;
 
 namespace Coding4Fun.Etl.EtlLauncher;
@@ -76,7 +77,10 @@ public static class Program
 
         ISourceDb sourceDb = new SqlServerSourceDb(sourceConnectionString);
         ITargetDb targetDb = new SqlServerTargetDb(targetConnectionString);
+        DistributedLockManager lockManager = new(new SqlLockProvider(sourceConnectionString));
 
+        // The following code must be executed only once at a time through the distributed nodes.
+        using var distributedLock = lockManager.Lock(sourceDb, etlConfiguration.ProcedureName);
         for (int batchNumber = 1; 0 < copiedRowsCount; ++batchNumber)
         {
             Logger.LogInformation("Batch #{BatchNumber}", batchNumber);
