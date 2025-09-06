@@ -40,7 +40,7 @@ public class EtlTest
         stageDacServices.Deploy(stagePackage, StageDb, true);
 
         // Filling source database with test data.
-        string fillDataSql = await File.ReadAllTextAsync(@"..\..\..\..\TestData\FillShop.sql");
+        string fillDataSql = await File.ReadAllTextAsync(@"..\..\..\..\TestData\FillWithSampleData.sql");
         await ExecuteCommandAsync(stageConnectionString, fillDataSql);
 
         // Deploying target database.
