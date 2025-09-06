@@ -2,7 +2,7 @@ CREATE TABLE [dbo].[TableSync]
 (
   [Id] INT IDENTITY NOT NULL,
   [EtlName] VARCHAR(200) NOT NULL,
-  [Value] DATETIME2 NOT NULL,
+  [Value] DATETIME2(3) NOT NULL,
   [CommitTime] DATETIME2(3) NOT NULL,
   CONSTRAINT [PK_TableSync] PRIMARY KEY ([Id] ASC)
 );
