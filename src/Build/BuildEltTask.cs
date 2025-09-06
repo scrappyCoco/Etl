@@ -233,7 +233,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     {
         Template template = new("""
             SELECT TOP (<batchSize>) WITH TIES <columns: {col | <col.name>}; separator=", ">
-            FROM <tableName> WHERE @Min < <firstColumnName>
+            FROM <tableName> WHERE @Min \< <firstColumnName>
             ORDER BY <firstColumnName> ASC;
             """);
 
