@@ -2,7 +2,7 @@ CREATE TABLE stage.PaymentItem
 (
     [BatchDt] DATETIME2(3) NOT NULL,
     [BatchRowId] BIGINT NOT NULL,
-    [PaymentId] UNIQUEIDENTIFIER NOT NULL,
+    [ParentRowId] BIGINT NOT NULL,
     [ItemNumber] INT NOT NULL,
     [Article] VARCHAR(50) NOT NULL,
     [Quantity] INT NOT NULL,
