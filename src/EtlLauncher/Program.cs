@@ -96,7 +96,7 @@ public static class Program
                     Logger.LogInformation("Getting last offset");
                     DateTime lastOffset = await targetDb.GetLastOffsetAsync(etlConfiguration.ProcedureName) ?? DateTime.MinValue;
 
-                    Logger.LogInformation("Bulk inserting into temp table");
+                    Logger.LogInformation("Bulk inserting into temp table, offset: {LastOffset}", lastOffset);
                     await sourceDb.ExecuteReaderAsync(tableDefinition.SelectStatement, async dataReader =>
                     {
                         copiedRowsCount = await targetDb.BulkInsertAsync(tableDefinition.TempTableName, dataReader);
