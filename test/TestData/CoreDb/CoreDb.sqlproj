@@ -16,6 +16,8 @@
     </SqlCmdVariable>
   </ItemGroup>
   <ItemGroup>
+  <!-- We can use PackageReference only if this package has been published to a corporate NuGet Repository. -->
+  <!-- ProjectReference works same as PackageReference (in our context). -->
     <!-- <PackageReference Include="StageDb">
       <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
       <DatabaseSqlCmdVariable>StageDb</DatabaseSqlCmdVariable>
