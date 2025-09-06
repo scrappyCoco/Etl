@@ -15,6 +15,7 @@
     <Authors>Artem</Authors>
     <Company>Coding4Fun</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,8 @@
     <None Include="msbuild/buildMultiTargeting/*.*" Pack="true" PackagePath="buildMultiTargeting" />
 
     <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="tools/net8.0" />
+    <None Include="$(OutputPath)/Antlr3.Runtime.dll" Pack="true" PackagePath="tools/net8.0" />
+    <None Include="$(OutputPath)/Antlr4.StringTemplate.dll" Pack="true" PackagePath="tools/net8.0" />
   </ItemGroup>
 
 </Project>
