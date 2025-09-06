@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>Coding4Fun.Etl.EtlLauncher</AssemblyName>
     <RootNamespace>$(AssemblyName)</RootNamespace>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
