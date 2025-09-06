@@ -54,7 +54,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// <summary>
     /// SQL model loader implementation for DACPAC file processing.
     /// </summary>
-    internal ISqlModelLoader ModelLoader { get; set; } = new SqlModelLoader();
+    internal ISqlModelLoader ModelLoader { get; set; } = new DacPacModelLoader();
 
     /// <summary>
     /// File system operations provider for directory and file manipulation.
