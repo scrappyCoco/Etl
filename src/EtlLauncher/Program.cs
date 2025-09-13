@@ -88,15 +88,15 @@ public static class Program
 
             foreach (TableDefinition tableDefinition in etlConfiguration.TableDefinitions.OrderByDescending(t => t.IsMain))
             {
-                Logger.LogInformation("Creating {TempTableName}", tableDefinition.TempTableName);
+                Logger.LogTrace("Creating {TempTableName}", tableDefinition.TempTableName);
                 await targetDb.ExecuteAsync(tableDefinition.CreateTempTableStatement);
 
                 if (tableDefinition.IsMain)
                 {
-                    Logger.LogInformation("Getting last offset");
+                    Logger.LogTrace("Getting last offset");
                     DateTime lastOffset = await targetDb.GetLastOffsetAsync(etlConfiguration.ProcedureName) ?? DateTime.MinValue;
 
-                    Logger.LogInformation("Bulk inserting into temp table, offset: {LastOffset}", lastOffset);
+                    Logger.LogTrace("Bulk inserting into temp table, offset: {LastOffset}", lastOffset);
                     await sourceDb.ExecuteReaderAsync(tableDefinition.SelectStatement, async dataReader =>
                     {
                         copiedRowsCount = await targetDb.BulkInsertAsync(tableDefinition.TempTableName, dataReader);
@@ -105,22 +105,23 @@ public static class Program
                         command.Parameters.Add("@Min", SqlDbType.DateTime2).Value = lastOffset;
                     });
 
-                    Logger.LogInformation("Rows inserted: {CopiedRowsCount}", copiedRowsCount);
+                    Logger.LogTrace("Rows inserted: {CopiedRowsCount}", copiedRowsCount);
 
                     if (0 == copiedRowsCount) break;
 
-                    Logger.LogInformation("Getting batch boundaries");
-                    await targetDb.ExecuteReaderAsync(tableDefinition.SelectBatchSTatement, async reader =>
+                    Logger.LogTrace("Getting batch boundaries");
+                    await targetDb.ExecuteReaderAsync(tableDefinition.SelectBatchStatement, async reader =>
                     {
                         await Task.CompletedTask;
                         reader.Read();
                         minRowId = reader.GetDateTime(0);
                         maxRowId = reader.GetDateTime(1);
                     });
+                    Logger.LogInformation("Boundaries are: [{MinRowId}, {MaxRowId}]", minRowId, maxRowId);
                 }
                 else
                 {
-                    Logger.LogInformation("Bulk inserting into temp table");
+                    Logger.LogTrace("Bulk inserting into temp table");
                     await sourceDb.ExecuteReaderAsync(tableDefinition.SelectStatement, async reader =>
                     {
                         await targetDb.BulkInsertAsync(tableDefinition.TempTableName, reader);
@@ -134,11 +135,11 @@ public static class Program
 
             if (0 < copiedRowsCount)
             {
-                Logger.LogInformation("Executing ETL");
+                Logger.LogTrace("Executing ETL");
                 await targetDb.ExecuteAsync(etlConfiguration.EtlSql);
                 await targetDb.SaveLastOffsetAsync(etlConfiguration.ProcedureName, maxRowId ?? throw new InvalidOperationException("Offset is null"));
             }
-            Logger.LogInformation("Committing transaction");
+            Logger.LogTrace("Committing transaction");
             await targetDb.CloseConnectionAsync();
         }
     }
