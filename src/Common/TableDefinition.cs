@@ -7,6 +7,6 @@ public class TableDefinition
     public required bool IsMain { get; set; }
     public required string SelectStatement { get; set; }
     public required string CreateTempTableStatement { get; set; }
-    public required string SelectBatchSTatement { get; set; }
+    public required string SelectBatchStatement { get; set; }
     public required ColumnDefinition[] Columns { get; set; }
 }

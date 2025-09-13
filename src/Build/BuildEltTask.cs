@@ -189,7 +189,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                     IsMain = isMainTable,
                     SelectStatement = selectStatement,
                     CreateTempTableStatement = tempTableDdl,
-                    SelectBatchSTatement = selectBatchStatement,
+                    SelectBatchStatement = selectBatchStatement,
                     Columns = [.. columnDefinitions]
                 };
                 tableDefinitions.Add(tableDefinition);
