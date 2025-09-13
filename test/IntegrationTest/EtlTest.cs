@@ -35,23 +35,26 @@ public class EtlTest
         string coreConnectionString = coreContainer.GetConnectionString().Replace(";Database=master", ";Database=" + CoreDb);
 
         // Deploying source database.
-        DacPackage stagePackage = DacPackage.Load(@"..\..\..\..\TestData\StageDb\bin\Debug\StageDb.dacpac");
+        string stageDbPath = Path.GetFullPath("../../../../TestData/StageDb/bin/Debug/StageDb.dacpac");
+        DacPackage stagePackage = DacPackage.Load(stageDbPath);
         DacServices stageDacServices = new(stageContainer.GetConnectionString());
         stageDacServices.Deploy(stagePackage, StageDb, true);
 
         // Filling source database with test data.
-        string fillDataSql = await File.ReadAllTextAsync(@"..\..\..\..\TestData\FillWithSampleData.sql");
+        string sampleDataPath = Path.GetFullPath("../../../../TestData/FillWithSampleData.sql");
+        string fillDataSql = await File.ReadAllTextAsync(sampleDataPath);
         await ExecuteCommandAsync(stageConnectionString, fillDataSql);
 
         // Deploying target database.
-        DacPackage corePackage = DacPackage.Load(@"..\..\..\..\TestData\CoreDb\bin\Debug\CoreDb.dacpac");
+        string coreDbPath = Path.GetFullPath("../../../../TestData/CoreDb/bin/Debug/CoreDb.dacpac");
+        DacPackage corePackage = DacPackage.Load(coreDbPath);
         DacServices coreDacServices = new(coreContainer.GetConnectionString());
         DacDeployOptions options = new();
         options.SetVariable("StageDb", StageDb);
         coreDacServices.Deploy(corePackage, CoreDb, true, options: options);
 
         // Executing ETL process, that is copying data from source to target.
-        FileInfo etlFile = new(@"..\..\..\..\TestData\CoreDb\bin\Debug\Etl\MergePayment.json");
+        FileInfo etlFile = new("../../../../TestData/CoreDb/bin/Debug/Etl/MergePayment.json");
         await Program.ExecuteEtlAsync(etlFile, stageConnectionString, coreConnectionString);
 
         // Validating data after loading data to the target.
