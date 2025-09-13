@@ -22,13 +22,13 @@ INSERT INTO [stage].[Payment]
            ([BatchDt]
            ,[BatchRowId]
            ,[PaymentId]
-           ,[Amount]
+           ,[Sum]
            ,[Currency])
 SELECT
  [BatchDt] = DATEADD(MINUTE, BatchNumber, GETDATE()),
  [BatchRowId] = RowNumber,
  [PaymentId] = NEWID(),
- [Amount] = ABS(CHECKSUM(NEWID())) % 100,
+ [Sum] = ABS(CHECKSUM(NEWID())) % 100,
  [Currency] = CASE Currency
               WHEN 1 THEN 'RUB'
               WHEN 2 THEN 'BYN'
@@ -40,7 +40,6 @@ INSERT INTO [stage].[PaymentItem]
            ([BatchDt]
            ,[BatchRowId]
            ,[ParentRowId]
-           ,[ItemNumber]
            ,[Article]
            ,[Quantity]
            ,[Price])
@@ -48,7 +47,6 @@ SELECT BatchDt,
        BatchRowId = ROW_NUMBER() OVER (PARTITION BY Payment.BatchDt
                                            ORDER BY Payment.BatchRowId),
        ParentRowId = Payment.BatchRowId,
-       ItemNumber = G.Number,
        Article = NEWID(),
        Quantity = (ABS(CHECKSUM(NEWID())) % 5) + 1,
        Price = (ABS(CHECKSUM(NEWID())) % 100) + 1

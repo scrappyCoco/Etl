@@ -1,8 +1,19 @@
 CREATE PROCEDURE dbo.MergePayment
 AS
 BEGIN
+    -- The name of the main table that has related tables.
     -- C4F.ETL.MainTable:stage.Payment
+    --
+    -- The number of rows we want to retrieve from the Stage.
     -- C4F.ETL.BatchSize:1005
+    --
+    -- During the filling of a batch, it will be converted into a query:
+    -- ```
+    -- SELECT TOP (1005) WITH TIES BatchDt, ...
+    -- FROM stage.Payment
+    -- ORDER BY BatchDt;
+    -- ```
+    -- Then all batches of related tables will be filled with the fetched BatchDt value.
     INSERT INTO dbo.Currency (IsoCode)
     SELECT Currency
     FROM [$(StageDb)].stage.Payment
@@ -12,7 +23,7 @@ BEGIN
 
     MERGE dbo.Payment AS Target
     USING (SELECT Payment.PaymentId,
-                  Payment.Amount,
+                  Payment.Sum,
                   Currency.CurrencyId,
                   ModifyDt = Payment.BatchDt
            FROM [$(StageDb)].stage.Payment AS Payment
@@ -20,12 +31,12 @@ BEGIN
     ON Source.PaymentId = Target.PaymentId
     WHEN NOT MATCHED THEN INSERT (
            PaymentId
-          ,Amount
+          ,Sum
           ,CurrencyId
           ,ModifyDt)
-    VALUES (Source.PaymentId, Source.Amount, Source.CurrencyId, Source.ModifyDt)
+    VALUES (Source.PaymentId, Source.Sum, Source.CurrencyId, Source.ModifyDt)
     WHEN MATCHED
-    THEN UPDATE SET Target.Amount = Source.Amount,
+    THEN UPDATE SET Target.Sum = Source.Sum,
                     Target.CurrencyId = Source.CurrencyId;
 
     DELETE Target
@@ -35,9 +46,8 @@ BEGIN
         FROM [$(StageDb)].stage.Payment AS ModifiedPayment
     );
 
-    INSERT INTO dbo.PaymentItem (PaymentId, ItemNumber, Article, Quantity, Price)
+    INSERT INTO dbo.PaymentItem (PaymentId, Article, Quantity, Price)
     SELECT Payment.PaymentId,
-           PaymentItem.ItemNumber,
            PaymentItem.Article,
            PaymentItem.Quantity,
            PaymentItem.Price
