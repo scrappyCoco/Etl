@@ -6,7 +6,6 @@ using Coding4Fun.Etl.Build.Services.Dacpac;
 using Coding4Fun.Etl.Build.Services.IO;
 using Coding4Fun.Etl.Common;
 using Coding4Fun.TransactSql.Analyzers.Visitors;
-using Microsoft.SqlServer.Dac;
 using Microsoft.SqlServer.Dac.Model;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using ColumnDefinition = Coding4Fun.Etl.Common.ColumnDefinition;
@@ -91,7 +90,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
         Log.LogMessage($"{nameof(C4FEtlGeneratorTargetDacPacPath)}: \"{C4FEtlGeneratorTargetDacPacPath}\"");
         Log.LogMessage($"{nameof(C4FEtlGeneratorOutputEtlConfig)}: \"{C4FEtlGeneratorOutputEtlConfig}\"");
 
-        PipelineConfiguration[] pipelineConfigurations = Generate();
+        PipelineConfiguration[] pipelineConfigurations = Generate(C4FEtlGeneratorSourceDacPacPath, C4FEtlGeneratorTargetDacPacPath);
         JsonSerializerOptions options = new()
         {
             WriteIndented = true
@@ -112,12 +111,15 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// Generates ETL pipeline configurations from target DACPAC stored procedures.
     /// </summary>
     /// <returns>Array of generated pipeline configurations</returns>
-    private PipelineConfiguration[] Generate()
+    private PipelineConfiguration[] Generate(
+        string sourceDacPacPath,
+        string targetDacPacPath
+    )
     {
         List<PipelineConfiguration> pipelineConfigurations = [];
         Sql160ScriptGenerator generator = new();
-        TSqlModel sourceModel = ModelLoader.Load(C4FEtlGeneratorSourceDacPacPath);
-        TSqlModel targetModel = ModelLoader.Load(C4FEtlGeneratorTargetDacPacPath);
+        TSqlModel sourceModel = ModelLoader.Load(sourceDacPacPath);
+        TSqlModel targetModel = ModelLoader.Load(targetDacPacPath);
         IEnumerable<TSqlObject> storedProcedures = targetModel.GetObjects(DacQueryScopes.UserDefined, ModelSchema.Procedure);
         foreach (TSqlObject procedure in storedProcedures)
         {

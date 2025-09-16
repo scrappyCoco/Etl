@@ -13,8 +13,6 @@ public class EtlTest
     [Fact]
     public async Task Test1()
     {
-        const string StageServer = "stage";
-        const string CoreServer = "core";
         const string StageDb = "StageDb";
         const string CoreDb = "CoreDb";
 
@@ -72,13 +70,5 @@ public class EtlTest
         await using SqlCommand sqlCommand = new(command, sqlConnection);
         sqlConnection.Open();
         await sqlCommand.ExecuteNonQueryAsync();
-
-        await using SqlCommand sqlCommand1 = new("SELECT COUNT(*) FROM stage.Payment", sqlConnection);
-        await using SqlDataReader reader = await sqlCommand1.ExecuteReaderAsync();
-        while (reader.Read())
-        {
-            string value = reader[0].ToString();
-            Console.WriteLine(value);
-        }
     }
 }
