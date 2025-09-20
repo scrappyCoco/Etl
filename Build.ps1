@@ -1,4 +1,6 @@
+dotnet tool install gitversion
 dotnet build ./src/Build/Build.csproj --configuration Release
+dotnet gitversion
 dotnet build ./src/EtlLauncher/EtlLauncher.csproj --configuration Release
 dotnet build ./test/TestData/StageDb/StageDb.sqlproj --configuration Release
 dotnet restore ./test/TestData/CoreDb/CoreDb.sqlproj --configfile ./test/TestData/CoreDb/nuget.config
