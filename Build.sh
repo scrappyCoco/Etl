@@ -1,4 +1,4 @@
-dotnet tool install gitversion
+dotnet tool restore
 dotnet build ./src/Build/Build.csproj --configuration Release
 dotnet gitversion
 dotnet build ./src/EtlLauncher/EtlLauncher.csproj --configuration Release
