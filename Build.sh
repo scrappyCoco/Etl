@@ -22,3 +22,4 @@ branchName=`git rev-parse --abbrev-ref HEAD`
 if [ "$branchName" = "main" ]
 then
     echo "${semVer}"
+fi
