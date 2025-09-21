@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 
 /// <summary>
@@ -34,6 +35,8 @@ public class SqlServerTargetDb(string connectionString) : ITargetDb
     public async Task CloseConnectionAsync()
     {
         await Task.CompletedTask;
+        Trace.Assert(_connection != null);
+        Trace.Assert(_transaction != null);
         _transaction.Commit();
         _connection.Close();
         _connection.Dispose();
