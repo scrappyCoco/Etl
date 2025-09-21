@@ -18,5 +18,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
+    - name: Build
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: ./Build.sh
