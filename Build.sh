@@ -10,7 +10,7 @@ dotnet build ./test/TestData/StageDb/StageDb.sqlproj --configuration Release
 sourceVersionPattern="1.0.0"
 replacementPattern="${semVer}"
 sedCommand="s/${sourceVersionPattern}/${replacementPattern}/g"
-sed "${sedCommand}" "Directory.Packages.props"
+sed -i "${sedCommand}" "Directory.Packages.props"
 
 dotnet restore ./test/TestData/CoreDb/CoreDb.sqlproj --configfile ./test/TestData/CoreDb/nuget.config
 dotnet build ./test/TestData/CoreDb/CoreDb.sqlproj --configuration Release --no-restore
