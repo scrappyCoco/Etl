@@ -16,3 +16,9 @@ dotnet restore ./test/TestData/CoreDb/CoreDb.sqlproj --configfile ./test/TestDat
 dotnet build ./test/TestData/CoreDb/CoreDb.sqlproj --configuration Release --no-restore
 dotnet test ./test/BuildTest/BuildTest.csproj
 dotnet test ./test/IntegrationTest/IntegrationTest.csproj
+
+branchName=`git rev-parse --abbrev-ref HEAD`
+
+if [ "$branchName" = "main" ]
+then
+    echo "${semVer}"
