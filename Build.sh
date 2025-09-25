@@ -22,5 +22,5 @@ branchName=`git rev-parse --abbrev-ref HEAD`
 if [ "$branchName" = "main" ]
 then
     echo "${semVer}"
-    dotnet nuget push ./src/Build/Build/bin/Release/Coding4Fun.Sql.Build.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
+    dotnet nuget push ./src/Build/bin/Release/Coding4Fun.Sql.Build.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
 fi
