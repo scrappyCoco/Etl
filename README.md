@@ -236,7 +236,7 @@ First and foremost, database projects for Stage and Core must be created using t
 </Project>
 ```
 
-4. Include `Coding4Fun.Sql.Build` in the Core project from the public NuGet repository.
+4. Include `Coding4Fun.Etl.Build` in the Core project from the public NuGet repository.
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build">
@@ -258,19 +258,19 @@ First and foremost, database projects for Stage and Core must be created using t
       <Version>1.0.0</Version>
     </PackageReference>
     <!-- Add the following line -->
-    <PackageReference Include="Coding4Fun.Sql.Build" />
+    <PackageReference Include="Coding4Fun.Etl.Build" />
   </ItemGroup>
 </Project>
 ```
 
 5. Build the Core project and deploy it to the server using SqlPackage.
 
-6. During the build of the Core project, the library `Coding4Fun.Sql.Build` is generating configurations for the EtlLauncher. These configurations contain information about the source tables and the ETL process. An example of a configuration file is [MergePayment.json](https://github.com/scrappyCoco/Etl/blob/main/test/TestData/Expected/MergePayment.json).
+6. During the build of the Core project, the library `Coding4Fun.Etl.Build` is generating configurations for the Launcher. These configurations contain information about the source tables and the ETL process. An example of a configuration file is [MergePayment.json](https://github.com/scrappyCoco/Etl/blob/main/test/TestData/Expected/MergePayment.json).
 
-7. Create a job that will run EtlLauncher periodically. You will need to pass the generated config and connection strings for the Stage and Core databases to it:
+7. Create a job that will run Launcher periodically. You will need to pass the generated config and connection strings for the Stage and Core databases to it:
 
 ```
-> .\Coding4Fun.Etl.EtlLauncher.exe `
+> .\Coding4Fun.Etl.Launcher.exe `
       --pipeline-config path-to-generated-config.json `
       --source-connection-string "Server=.;Database=Stage;User ID=sa;Password=pa$$"`
       --target-connection-string "Server=.;Database=Stage;User ID=sa;Password=pa$$"
@@ -327,9 +327,9 @@ First and foremost, database projects for Stage and Core must be created using t
              /Variables:StageDb=StageDb
 ```
 
-8. Run Coding4Fun.Etl.EtlLauncher:
+8. Run Coding4Fun.Etl.Launcher:
 ```
-> src/EtlLauncher/bin/Debug/net8.0/Coding4Fun.Sql.EtlLauncher \
+> src/Launcher/bin/Debug/net8.0/Coding4Fun.Sql.Launcher \
   --pipeline-config /Users/artemkorsunov/RiderProjects/Etl/test/TestData/CoreDb/bin/Debug/Etl/MergePayment.json \
   --source-connection-string "Server=.;User ID=sa;password=3J5*Y/,Ym/_&VJ3@;Database=StageDb;TrustServerCertificate=True;" \
   --target-connection-string "Server=.;User ID=sa;password=3J5*Y/,Ym/_&VJ3@;Database=CoreDb;TrustServerCertificate=True;"
