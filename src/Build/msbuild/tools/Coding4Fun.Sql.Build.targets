@@ -2,7 +2,7 @@
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <C4FSqlBuildDll>$([MSBuild]::EnsureTrailingSlash($(MSBuildThisFileDirectory)net8.0))Coding4Fun.Sql.Build.dll</C4FSqlBuildDll>
+        <C4FSqlBuildDll>$([MSBuild]::EnsureTrailingSlash($(MSBuildThisFileDirectory)net8.0))Coding4Fun.Etl.Build.dll</C4FSqlBuildDll>
     </PropertyGroup>
 
   <UsingTask TaskName="BuildEltTask" TaskFactory="TaskHostFactory" AssemblyFile="$(C4FSqlBuildDll)" />

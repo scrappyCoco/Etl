@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Build", "src\Build\Build.csproj", "{09FD25A6-04F5-4763-89A8-BA93FD2B4421}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLauncher", "src\EtlLauncher\EtlLauncher.csproj", "{DF9BCAA5-DB63-4FC8-9802-EF8C358798A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher", "src\Launcher\Launcher.csproj", "{DF9BCAA5-DB63-4FC8-9802-EF8C358798A4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{BFF2DF6E-AA54-47C7-211F-79ACCBB4577C}"
 EndProject

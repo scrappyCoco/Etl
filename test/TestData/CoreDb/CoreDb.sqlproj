@@ -30,6 +30,6 @@
       <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
       <DatabaseSqlCmdVariable>StageDb</DatabaseSqlCmdVariable>
     </ProjectReference>
-    <PackageReference Include="Coding4Fun.Sql.Build" />
+    <PackageReference Include="Coding4Fun.Etl.Build" />
   </ItemGroup>
 </Project>

@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/EtlLauncher/EtlLauncher.csproj" />
+    <ProjectReference Include="../../src/Launcher/Launcher.csproj" />
   </ItemGroup>
 
   <ItemGroup>

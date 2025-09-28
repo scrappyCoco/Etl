@@ -2,11 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>Coding4Fun.Etl.EtlLauncher</AssemblyName>
+    <AssemblyName>Coding4Fun.Etl.Launcher</AssemblyName>
     <RootNamespace>$(AssemblyName)</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>$(AssemblyName)</ToolCommandName>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Authors>Artem</Authors>
+    <Company>Coding4Fun</Company>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>

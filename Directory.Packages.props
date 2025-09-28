@@ -5,7 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="Coding4Fun.Sql.Build" Version="1.0.0" />
+    <PackageVersion Include="Coding4Fun.Etl.Build" Version="1.0.0" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="Gibraltar.DistributedLocking" Version="1.5.0" />
     <PackageVersion Include="GitVersion.MsBuild" Version="6.4.0" />

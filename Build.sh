@@ -4,7 +4,7 @@ set -o xtrace
 dotnet tool restore
 dotnet build ./src/Build/Build.csproj --configuration Release
 semVer=`dotnet gitversion /showvariable SemVer`
-dotnet build ./src/EtlLauncher/EtlLauncher.csproj --configuration Release
+dotnet build ./src/Launcher/Launcher.csproj --configuration Release
 dotnet build ./test/TestData/StageDb/StageDb.sqlproj --configuration Release
 
 sourceVersionPattern="1.0.0"
@@ -22,5 +22,6 @@ branchName=`git rev-parse --abbrev-ref HEAD`
 if [ "$branchName" = "main" ]
 then
     echo "${semVer}"
-    dotnet nuget push ./src/Build/bin/Release/Coding4Fun.Sql.Build.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
+    dotnet nuget push ./src/Build/bin/Release/Coding4Fun.Etl.Build.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
+    dotnet nuget push ./src/Launcher/bin/Release/Coding4Fun.Etl.Launcher.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
 fi
