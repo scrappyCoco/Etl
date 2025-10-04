@@ -5,7 +5,8 @@
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="Coding4Fun.Etl.Build" Version="1.0.0" />
+    <PackageVersion Include="Coding4Fun.Etl.Build" Version="0.0.3" />
+    <PackageVersion Include="Coding4Fun.Etl.Launcher" Version="0.0.3" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="Gibraltar.DistributedLocking" Version="1.5.0" />
     <PackageVersion Include="GitVersion.MsBuild" Version="6.4.0" />
@@ -19,7 +20,7 @@
     <PackageVersion Include="Microsoft.SqlServer.DacFx" Version="162.5.57" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="StringTemplate4" Version="4.0.8" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta6.25358.103" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-rc.1.25451.107" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.2" />
