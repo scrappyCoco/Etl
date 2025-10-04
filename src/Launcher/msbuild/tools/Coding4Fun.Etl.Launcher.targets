@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <C4FSqlLauncherDirectory>$([MSBuild]::EnsureTrailingSlash($(MSBuildThisFileDirectory)net8.0))</C4FSqlLauncherDirectory>
+    </PropertyGroup>
+
+  <Target Name="CopyEtlLauncher" AfterTargets="SqlBuild">
+    <PropertyGroup>
+        <C4FEtlGeneratorOutputEtlConfig Condition="'$(C4FEtlGeneratorOutputEtlConfig)' == ''">$(TargetDir)Etl</C4FEtlGeneratorOutputEtlConfig>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <LauncherAssemblies Include="$(C4FSqlLauncherDirectory)/**/*.*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(LauncherAssemblies)"
+          DestinationFolder="$(MSBuildProjectDirectory)/bin/Coding4Fun.Etl.Launcher/%(RecursiveDir)" />
+  </Target>
+</Project>
