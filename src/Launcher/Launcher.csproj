@@ -5,15 +5,17 @@
     <AssemblyName>Coding4Fun.Etl.Launcher</AssemblyName>
     <RootNamespace>$(AssemblyName)</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+    <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>$(AssemblyName)</ToolCommandName>
     <PackageId>$(AssemblyName)</PackageId>
     <Authors>Artem</Authors>
     <Company>Coding4Fun</Company>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -32,5 +34,16 @@
     <Compile Include="..\Common\*.cs">
       <LinkBase>Common\</LinkBase>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="msbuild/tools/*.*" Pack="true" PackagePath="tools" />
+    <None Include="msbuild/build/*.*" Pack="true" PackagePath="build" />
+    <None Include="msbuild/buildMultiTargeting/*.*" Pack="true" PackagePath="buildMultiTargeting" />
+
+    <None Include="bin/$(Configuration)/$(TargetFramework)/win-x64/**" Pack="true" PackagePath="tools/$(TargetFramework)/win-x64" />
+    <None Include="bin/$(Configuration)/$(TargetFramework)/osx-x64/**" Pack="true" PackagePath="tools/$(TargetFramework)/osx-x64" />
+    <None Include="bin/$(Configuration)/$(TargetFramework)/linux-x64/**" Pack="true" PackagePath="tools/$(TargetFramework)/linux-x64" />
   </ItemGroup>
 </Project>
