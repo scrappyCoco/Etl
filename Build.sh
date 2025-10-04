@@ -13,8 +13,13 @@ dotnet pack ./src/Launcher/Launcher.csproj --configuration Release
 
 dotnet build ./test/TestData/StageDb/StageDb.sqlproj --configuration Release
 
-sourceVersionPattern="PackageVersion Include=\"Coding4Fun.Etl.[a-zA-Z]*\" Version=\"[0-9]*.[0-9]*.[0-9]*\""
-replacementPattern="PackageVersion Include=\"Coding4Fun.Etl.[a-zA-Z]*\" Version=\"${semVer}\""
+sourceVersionPattern="PackageVersion Include=\"Coding4Fun.Etl.Build\" Version=\"[0-9]*.[0-9]*.[0-9]*\""
+replacementPattern="PackageVersion Include=\"Coding4Fun.Etl.Build\" Version=\"${semVer}\""
+sedCommand="s/${sourceVersionPattern}/${replacementPattern}/g"
+sed -i "${sedCommand}" "Directory.Packages.props"
+
+sourceVersionPattern="PackageVersion Include=\"Coding4Fun.Etl.Launcher\" Version=\"[0-9]*.[0-9]*.[0-9]*\""
+replacementPattern="PackageVersion Include=\"Coding4Fun.Etl.Launcher\" Version=\"${semVer}\""
 sedCommand="s/${sourceVersionPattern}/${replacementPattern}/g"
 sed -i "${sedCommand}" "Directory.Packages.props"
 
