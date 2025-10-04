@@ -1,6 +1,7 @@
 # Output all commands
 set -o xtrace
 
+dotnet tool restore
 dotnet build ./src/Build/Build.csproj --configuration Release
 semVer=`dotnet gitversion /showvariable SemVer`
 
@@ -12,8 +13,8 @@ dotnet pack ./src/Launcher/Launcher.csproj --configuration Release
 
 dotnet build ./test/TestData/StageDb/StageDb.sqlproj --configuration Release
 
-sourceVersionPattern="1.0.0"
-replacementPattern="${semVer}"
+sourceVersionPattern="PackageVersion Include=\"Coding4Fun.Etl.[a-zA-Z]*\" Version=\"[0-9]*.[0-9]*.[0-9]*\""
+replacementPattern="PackageVersion Include=\"Coding4Fun.Etl.[a-zA-Z]*\" Version=\"${semVer}\""
 sedCommand="s/${sourceVersionPattern}/${replacementPattern}/g"
 sed -i "${sedCommand}" "Directory.Packages.props"
 
