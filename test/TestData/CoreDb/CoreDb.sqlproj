@@ -31,5 +31,6 @@
       <DatabaseSqlCmdVariable>StageDb</DatabaseSqlCmdVariable>
     </ProjectReference>
     <PackageReference Include="Coding4Fun.Etl.Build" />
+    <PackageReference Include="Coding4Fun.Etl.Launcher" />
   </ItemGroup>
 </Project>
