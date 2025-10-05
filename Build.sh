@@ -29,7 +29,7 @@ dotnet test ./test/BuildTest/BuildTest.csproj
 dotnet test ./test/IntegrationTest/IntegrationTest.csproj
 
 branchName=`git rev-parse --abbrev-ref HEAD`
-tagWithVersion=`git tag --points-at HEAD | grep -E 'v\d+\.\d+\.\d+'`
+tagWithVersion=`git tag --points-at HEAD | grep 'v[0-9]*.[0-9]*.[0-9]*'`
 
 echo "${semVer}"
 if [ "$branchName" = "main" ] && ! [ "$tagWithVersion" == "" ]
