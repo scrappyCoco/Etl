@@ -32,7 +32,7 @@ branchName=`git rev-parse --abbrev-ref HEAD`
 tagWithVersion=`git tag --points-at HEAD | grep -E 'v\d+\.\d+\.\d+'`
 
 echo "${semVer}"
-if [ "$branchName" = "main" ] && [ -n "$tagWithVersion" ]
+if [ "$branchName" = "main" ] && ! [ "$tagWithVersion" == "" ]
 then
     dotnet nuget push ./src/Build/bin/Release/Coding4Fun.Etl.Build.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
     dotnet nuget push ./src/Launcher/bin/Release/Coding4Fun.Etl.Launcher.$semVer.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
