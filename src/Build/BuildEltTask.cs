@@ -184,15 +184,14 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                 string tempTableDdl = GenerateCreateTableDefinition(tempTableName, columnDefinitions.ToArray());
                 string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, columnDefinitions[0].Name);
 
-                TableDefinition tableDefinition = new TableDefinition
+                TableDefinition tableDefinition = new()
                 {
                     StageTableName = tableName,
                     TempTableName = tempTableName,
                     IsMain = isMainTable,
                     SelectStatement = selectStatement,
                     CreateTempTableStatement = tempTableDdl,
-                    SelectBatchStatement = selectBatchStatement,
-                    Columns = [.. columnDefinitions]
+                    SelectBatchStatement = selectBatchStatement
                 };
                 tableDefinitions.Add(tableDefinition);
             }
