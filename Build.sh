@@ -1,6 +1,10 @@
 # Output all commands
 set -o xtrace
 
+# Exit on error
+set -e 
+set -o pipefail
+
 dotnet tool restore
 dotnet build ./src/Build/Build.csproj --configuration Release
 semVer=`dotnet gitversion /showvariable SemVer`
@@ -29,7 +33,7 @@ dotnet test ./test/BuildTest/BuildTest.csproj
 dotnet test ./test/IntegrationTest/IntegrationTest.csproj
 
 branchName=`git rev-parse --abbrev-ref HEAD`
-tagWithVersion=`git tag --points-at HEAD | grep 'v[0-9]*.[0-9]*.[0-9]*'`
+tagWithVersion=`git tag --points-at HEAD | grep 'v[0-9]*.[0-9]*.[0-9]*' || echo ""`
 
 echo "${semVer}"
 if [ "$branchName" = "main" ] && ! [ "$tagWithVersion" == "" ]
