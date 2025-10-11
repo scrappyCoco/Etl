@@ -8,7 +8,7 @@ BEGIN
     -- C4F.ETL.BatchSize:1005
     --
     -- Definition of the columns that are used to determine the batch.
-    -- C4F.ETL.BatchColumns: Payment.BatchDt,PaymentItem.BatchDt
+    -- C4F.ETL.BatchColumns: stage.Payment.BatchDt,stage.PaymentItem.BatchDt
     --
     -- During the filling of a batch, it will be converted into a query:
     -- ```
