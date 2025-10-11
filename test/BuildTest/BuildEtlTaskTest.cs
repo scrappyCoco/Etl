@@ -2,6 +2,7 @@
 using Coding4Fun.Etl.Build.Services.Dacpac;
 using Coding4Fun.Etl.Build.Services.IO;
 using Microsoft.Build.Framework;
+using Moq;
 
 namespace Coding4Fun.Etl.BuildTest;
 
@@ -14,8 +15,13 @@ public class BuildEtlTaskTest
     {
         const string outputEtlConfig = "/EtlCompilation/";
 
-        Moq.Mock<IBuildEngine> buildEngine = new();
+        List<string> logErrors = [];
+        Mock<IBuildEngine> buildEngine = new();
+        buildEngine.Setup(e => e
+            .LogErrorEvent(It.IsAny<BuildErrorEventArgs>()))
+            .Callback((BuildErrorEventArgs args) => logErrors.Add(args.Message));
         InMemoryFileProvider fileProvider = new();
+
         BuildEltTask buildEltTask = new()
         {
             BuildEngine = buildEngine.Object,
@@ -27,6 +33,8 @@ public class BuildEtlTaskTest
         };
 
         buildEltTask.Execute();
+
+        Assert.Empty(logErrors);
 
         string actualGeneratedEtlConfig = fileProvider.ReadAllText(Path.Combine(outputEtlConfig, "MergePayment.json"));
         string expectedEtlConfig = File.ReadAllText(Path.Combine(TestDataRoot, "Expected/MergePayment.json"));
