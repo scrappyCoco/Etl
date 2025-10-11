@@ -1,6 +1,10 @@
 # Output all commands
 set -o xtrace
 
+# Exit on error
+set -e 
+set -o pipefail
+
 dotnet tool restore
 dotnet build ./src/Build/Build.csproj --configuration Release
 semVer=`dotnet gitversion /showvariable SemVer`
