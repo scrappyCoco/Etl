@@ -1,4 +1,5 @@
-﻿using Coding4Fun.Etl.Build.Services.Dacpac;
+﻿using Coding4Fun.Etl.Build;
+using Coding4Fun.Etl.Build.Services.Dacpac;
 using Coding4Fun.Etl.Build.Services.IO;
 using Microsoft.Build.Framework;
 

@@ -8,5 +8,4 @@ public class TableDefinition
     public required string SelectStatement { get; set; }
     public required string CreateTempTableStatement { get; set; }
     public required string SelectBatchStatement { get; set; }
-    public required ColumnDefinition[] Columns { get; set; }
 }

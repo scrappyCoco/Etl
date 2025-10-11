@@ -11,6 +11,8 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 using ColumnDefinition = Coding4Fun.Etl.Common.ColumnDefinition;
 using TableDefinition = Coding4Fun.Etl.Common.TableDefinition;
 
+namespace Coding4Fun.Etl.Build;
+
 /// <summary>
 /// MSBuild task for generating ETL configuration pipelines from SQL objects in DACPAC files.
 /// </summary>
@@ -31,6 +33,11 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// Format: C4F.ETL.BatchSize: [value]
     /// </summary>
     private readonly Regex BatchSizeMarkerRegex = new("C4F[.]ETL[.]BatchSize:\\s*(?<value>\\S+)", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Regex pattern to identify batch column markers in SQL code.
+    /// </summary>
+    private readonly Regex BatchColumnMarkerRegex = new("C4F[.]ETL[.]BatchColumns:\\s*(?<value>^[^\n]+)", RegexOptions.Compiled);
 
     /// <summary>
     /// Path to the source DACPAC file containing database schema definitions.
@@ -148,6 +155,47 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             }
             int batchSize = int.Parse(batchSizeString!);
 
+            string? batchColumns = BatchColumnMarkerRegex.Match(procedureSql)?.Groups["value"].Value;
+            if (string.IsNullOrWhiteSpace(batchColumns))
+            {
+                Log.LogError("Procedure \"{procedure.Name}\" doesn't have \"{nameof(BatchColumnMarkerRegex)}\".");
+                continue;
+            }
+
+            // Collection of batch column names for each table.
+            Dictionary<string, string> batchColumnMap = [];
+            string[] batchColumnDefinitions = batchColumns.Split(',');
+            foreach (string batchColumnDefinition in batchColumnDefinitions)
+            {
+                string[] parts = batchColumnDefinition.Split('.');
+                string tableName = parts[0].Trim();
+                string columnName = parts[1].Trim();
+                batchColumnMap.Add(tableName, columnName);
+
+                TSqlObject? table = sourceModel.GetObject(
+                    ModelSchema.Table,
+                    new ObjectIdentifier(tableName),
+                    DacQueryScopes.SameDatabase);
+
+                if (table == null)
+                {
+                    Log.LogError($"Table \"{tableName}\" not found in source DACPAC.");
+                    continue;
+                }
+
+                TSqlObject? batchColumn = table
+                    .GetChildren(DacQueryScopes.SameDatabase)
+                    .FirstOrDefault(c => c.ObjectType == ModelSchema.Column &&
+                                         c.Name.Parts.Last() == columnName);
+
+                if (batchColumn == null)
+                {
+                    Log.LogError($"Column \"{columnName}\" not found in table \"{tableName}\".");
+                    continue;
+                }
+                batchColumnMap.Add(tableName, columnName);
+            }
+
             TreePartSearcherVisitor planModifierVisitor = new();
             procedureAst.Accept(planModifierVisitor);
 
@@ -163,9 +211,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                 List<ColumnDefinition> columnDefinitions = [];
 
                 TSqlObject tableFromSource = sourceModel.GetObject(ModelSchema.Table, objectIdentifier, DacQueryScopes.UserDefined);
-                TSqlObject[] columns = tableFromSource.GetChildren()
-                    .Where(c => c.ObjectType == ModelSchema.Column)
-                    .ToArray();
+                TSqlObject[] columns = [.. tableFromSource.GetChildren().Where(c => c.ObjectType == ModelSchema.Column)];
 
                 foreach (TSqlObject column in columns)
                 {
@@ -177,22 +223,27 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                                    + tableReference.SchemaObject.BaseIdentifier.Value;
 
                 bool isMainTable = mainTable == tableName;
-                string selectStatement = isMainTable
-                    ? GenerateSelectStatementForMainTable(tableName, columnDefinitions.ToArray(), batchSize)
-                    : GenerateSelectStatementForSecondaryTable(tableName, columnDefinitions.ToArray());
+                if (!batchColumnMap.TryGetValue(tableName, out string? batchColumn))
+                {
+                    Log.LogError($"Batch column not found for table \"{tableName}\". Example of configuration: \"-- C4F.ETL.BatchColumns: TableName.ColumnName\"");
+                    continue;
+                }
 
-                string tempTableDdl = GenerateCreateTableDefinition(tempTableName, columnDefinitions.ToArray());
+                string selectStatement = isMainTable
+                    ? GenerateSelectStatementForMainTable(tableName, [.. columnDefinitions], batchSize, batchColumn)
+                    : GenerateSelectStatementForSecondaryTable(tableName, [.. columnDefinitions], batchColumn);
+
+                string tempTableDdl = GenerateCreateTableDefinition(tempTableName, [.. columnDefinitions]);
                 string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, columnDefinitions[0].Name);
 
-                TableDefinition tableDefinition = new TableDefinition
+                TableDefinition tableDefinition = new()
                 {
                     StageTableName = tableName,
                     TempTableName = tempTableName,
                     IsMain = isMainTable,
                     SelectStatement = selectStatement,
                     CreateTempTableStatement = tempTableDdl,
-                    SelectBatchStatement = selectBatchStatement,
-                    Columns = [.. columnDefinitions]
+                    SelectBatchStatement = selectBatchStatement
                 };
                 tableDefinitions.Add(tableDefinition);
             }
@@ -231,21 +282,20 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// <param name="columns">Array of column definitions</param>
     /// <param name="batchSize">Number of records to select per batch</param>
     /// <returns>Formatted SQL SELECT statement</returns>
-    static string GenerateSelectStatementForMainTable(string tableName, ColumnDefinition[] columns, int batchSize)
+    static string GenerateSelectStatementForMainTable(string tableName, ColumnDefinition[] columns, int batchSize, string batchColumnName)
     {
         Template template = new("""
-            SELECT TOP (<batchSize>) WITH TIES <columns: {col | <col.name>}; separator=", ">
-            FROM <tableName> WHERE @Min \< <firstColumnName>
-            ORDER BY <firstColumnName> ASC;
+            SELECT TOP (<batchSize>) WITH TIES <columns: {col | <col>}; separator=", ">
+            FROM <tableName> WHERE @Min \< <batchColumnName>
+            ORDER BY <batchColumnName> ASC;
             """);
 
-        var columnNames = columns.Select(col => new { name = $"[{col.Name}]" }).ToList();
-        string firstColumnName = columns[0].Name;
+        string[] columnNames = [.. columns.Select(col => $"[{col.Name}]")];
 
         template.Add("batchSize", batchSize);
         template.Add("columns", columnNames);
         template.Add("tableName", tableName);
-        template.Add("firstColumnName", firstColumnName);
+        template.Add("batchColumnName", batchColumnName);
 
         return template.Render();
     }
@@ -256,17 +306,16 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// <param name="tableName">Fully qualified table name (schema.table)</param>
     /// <param name="columns">Array of column definitions</param>
     /// <returns>Formatted SQL SELECT statement</returns>
-    static string GenerateSelectStatementForSecondaryTable(string tableName, ColumnDefinition[] columns)
+    static string GenerateSelectStatementForSecondaryTable(string tableName, ColumnDefinition[] columns, string batchColumnName)
     {
         Template template = new(
-            "SELECT <columns: {col | <col.name>}; separator=\", \"> FROM <tableName> WHERE <firstColumnName> BETWEEN @Min AND @Max;");
+            "SELECT <columns: {col | <col.name>}; separator=\", \"> FROM <tableName> WHERE <batchColumnName> BETWEEN @Min AND @Max;");
 
         var columnNames = columns.Select(col => new { name = $"[{col.Name}]" }).ToList();
-        string firstColumnName = columns[0].Name;
 
         template.Add("columns", columnNames);
         template.Add("tableName", tableName);
-        template.Add("firstColumnName", firstColumnName);
+        template.Add("batchColumnName", batchColumnName);
 
         return template.Render();
     }

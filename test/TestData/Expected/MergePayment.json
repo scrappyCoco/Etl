@@ -8,49 +8,7 @@
       "IsMain": true,
       "SelectStatement": "SELECT TOP (1005) WITH TIES [BatchDt], [BatchRowId], [PaymentId], [Sum], [Currency]\nFROM stage.Payment WHERE @Min \u003C BatchDt\nORDER BY BatchDt ASC;",
       "CreateTempTableStatement": "CREATE TABLE #Payment (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [PaymentId] uniqueidentifier NOT NULL,     [Sum] decimal NOT NULL,     [Currency] char(3) NOT NULL);",
-      "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #Payment",
-      "Columns": [
-        {
-          "Name": "BatchDt",
-          "DataType": "datetime2",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "BatchRowId",
-          "DataType": "bigint",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "PaymentId",
-          "DataType": "uniqueidentifier",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "Sum",
-          "DataType": "decimal",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 20
-        },
-        {
-          "Name": "Currency",
-          "DataType": "char",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 3,
-          "Precision": 0
-        }
-      ]
+      "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #Payment"
     },
     {
       "StageTableName": "stage.PaymentItem",
@@ -58,57 +16,7 @@
       "IsMain": false,
       "SelectStatement": "SELECT [BatchDt], [BatchRowId], [ParentRowId], [Article], [Quantity], [Price] FROM stage.PaymentItem WHERE BatchDt BETWEEN @Min AND @Max;",
       "CreateTempTableStatement": "CREATE TABLE #PaymentItem (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [ParentRowId] bigint NOT NULL,     [Article] varchar(50) NOT NULL,     [Quantity] int NOT NULL,     [Price] decimal NOT NULL);",
-      "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #PaymentItem",
-      "Columns": [
-        {
-          "Name": "BatchDt",
-          "DataType": "datetime2",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "BatchRowId",
-          "DataType": "bigint",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "ParentRowId",
-          "DataType": "bigint",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "Article",
-          "DataType": "varchar",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 50,
-          "Precision": 0
-        },
-        {
-          "Name": "Quantity",
-          "DataType": "int",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 0
-        },
-        {
-          "Name": "Price",
-          "DataType": "decimal",
-          "IsNullable": false,
-          "IsMax": false,
-          "Length": 0,
-          "Precision": 18
-        }
-      ]
+      "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #PaymentItem"
     }
   ]
 }
