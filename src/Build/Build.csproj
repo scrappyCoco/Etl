@@ -41,6 +41,7 @@
     <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="tools/net8.0" />
     <None Include="$(OutputPath)/Antlr3.Runtime.dll" Pack="true" PackagePath="tools/net8.0" />
     <None Include="$(OutputPath)/Antlr4.StringTemplate.dll" Pack="true" PackagePath="tools/net8.0" />
+    <None Include="$(OutputPath)/Microsoft.SqlServer.TransactSql.ScriptDom.dll" Pack="true" PackagePath="tools/net8.0" />
   </ItemGroup>
 
 </Project>
