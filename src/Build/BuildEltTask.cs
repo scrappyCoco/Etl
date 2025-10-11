@@ -37,7 +37,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// <summary>
     /// Regex pattern to identify batch column markers in SQL code.
     /// </summary>
-    private readonly Regex BatchColumnMarkerRegex = new("C4F[.]ETL[.]BatchColumns:\\s*(?<value>^[^\n]+)", RegexOptions.Compiled);
+    private readonly Regex BatchColumnMarkerRegex = new("C4F[.]ETL[.]BatchColumns:\\s*(?<value>[^\n]+)", RegexOptions.Compiled);
 
     /// <summary>
     /// Path to the source DACPAC file containing database schema definitions.
@@ -158,7 +158,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             string? batchColumns = BatchColumnMarkerRegex.Match(procedureSql)?.Groups["value"].Value;
             if (string.IsNullOrWhiteSpace(batchColumns))
             {
-                Log.LogError("Procedure \"{procedure.Name}\" doesn't have \"{nameof(BatchColumnMarkerRegex)}\".");
+                Log.LogError($"Procedure \"{procedure.Name}\" doesn't have \"{nameof(BatchColumnMarkerRegex)}\".");
                 continue;
             }
 
@@ -167,32 +167,29 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             string[] batchColumnDefinitions = batchColumns.Split(',');
             foreach (string batchColumnDefinition in batchColumnDefinitions)
             {
-                string[] parts = batchColumnDefinition.Split('.');
-                string tableName = parts[0].Trim();
-                string columnName = parts[1].Trim();
-                batchColumnMap.Add(tableName, columnName);
+                string[] pathToColumn = batchColumnDefinition.Split('.');
+                ObjectIdentifier tableIdentifier = new(pathToColumn.SkipLast(1));
 
                 TSqlObject? table = sourceModel.GetObject(
                     ModelSchema.Table,
-                    new ObjectIdentifier(tableName),
-                    DacQueryScopes.SameDatabase);
+                    tableIdentifier,
+                    DacQueryScopes.UserDefined);
 
                 if (table == null)
                 {
-                    Log.LogError($"Table \"{tableName}\" not found in source DACPAC.");
+                    Log.LogError($"table \"{batchColumnDefinition}\" not found in source DACPAC.");
                     continue;
                 }
 
-                TSqlObject? batchColumn = table
-                    .GetChildren(DacQueryScopes.SameDatabase)
-                    .FirstOrDefault(c => c.ObjectType == ModelSchema.Column &&
-                                         c.Name.Parts.Last() == columnName);
-
-                if (batchColumn == null)
+                string tableName = string.Join(".", tableIdentifier.Parts);
+                string columnName = pathToColumn.Last();
+                
+                if (!table.GetChildren().Any(c => c.Name.Parts.Last() == columnName))
                 {
                     Log.LogError($"Column \"{columnName}\" not found in table \"{tableName}\".");
                     continue;
                 }
+
                 batchColumnMap.Add(tableName, columnName);
             }
 
