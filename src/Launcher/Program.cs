@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.Data;
+using System.Diagnostics;
 using System.Text.Json;
 using Coding4Fun.Etl.Common;
 using Gibraltar.DistributedLocking;
@@ -81,8 +82,10 @@ public static class Program
 
         // The following code must be executed only once at a time through the distributed nodes.
         using var distributedLock = lockManager.Lock(sourceDb, etlConfiguration.ProcedureName);
+        Stopwatch batchDurationStopwatch = new();
         for (int batchNumber = 1; 0 < copiedRowsCount; ++batchNumber)
         {
+            batchDurationStopwatch.Start();
             Logger.LogInformation("Batch #{BatchNumber}", batchNumber);
             await targetDb.OpenConnectionAsync();
 
@@ -143,8 +146,12 @@ public static class Program
                 await targetDb.ExecuteAsync(etlConfiguration.EtlSql);
                 await targetDb.SaveLastOffsetAsync(etlConfiguration.ProcedureName, maxRowId ?? throw new InvalidOperationException("Offset is null"));
             }
+
             Logger.LogTrace("Committing transaction");
             await targetDb.CloseConnectionAsync();
+
+            batchDurationStopwatch.Stop();
+            Logger.LogInformation("Batch #{BatchNumber} completed in {BatchDuration}", batchNumber, batchDurationStopwatch.Elapsed);
         }
     }
 }
