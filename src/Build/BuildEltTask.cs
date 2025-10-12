@@ -37,7 +37,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     /// <summary>
     /// Regex pattern to identify batch column markers in SQL code.
     /// </summary>
-    private readonly Regex BatchColumnMarkerRegex = new("C4F[.]ETL[.]BatchColumns:\\s*(?<value>[^\n]+)", RegexOptions.Compiled);
+    private readonly Regex BatchColumnMarkerRegex = new("C4F[.]ETL[.]BatchColumns:\\s*(?<value>[^\r\n]+)", RegexOptions.Compiled);
 
     /// <summary>
     /// Path to the source DACPAC file containing database schema definitions.
@@ -231,7 +231,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                     : GenerateSelectStatementForSecondaryTable(tableName, [.. columnDefinitions], batchColumn);
 
                 string tempTableDdl = GenerateCreateTableDefinition(tempTableName, [.. columnDefinitions]);
-                string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, columnDefinitions[0].Name);
+                string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, batchColumn);
 
                 TableDefinition tableDefinition = new()
                 {
