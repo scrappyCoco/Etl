@@ -102,7 +102,11 @@ public static class Program
                         copiedRowsCount = await targetDb.BulkInsertAsync(tableDefinition.TempTableName, dataReader);
                     }, command =>
                     {
-                        command.Parameters.Add("@Min", SqlDbType.DateTime2).Value = lastOffset;
+                        command.Parameters.Add(new("@Min", SqlDbType.DateTime2)
+                        {
+                            Precision = 3,
+                            Value = lastOffset
+                        });
                     });
 
                     Logger.LogTrace("Rows inserted: {CopiedRowsCount}", copiedRowsCount);
