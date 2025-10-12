@@ -231,7 +231,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
                     : GenerateSelectStatementForSecondaryTable(tableName, [.. columnDefinitions], batchColumn);
 
                 string tempTableDdl = GenerateCreateTableDefinition(tempTableName, [.. columnDefinitions]);
-                string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, columnDefinitions[0].Name);
+                string selectBatchStatement = GenerateSelectMinMaxStatement(tempTableName, batchColumn);
 
                 TableDefinition tableDefinition = new()
                 {
