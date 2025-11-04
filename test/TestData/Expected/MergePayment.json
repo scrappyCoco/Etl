@@ -7,7 +7,7 @@
       "TempTableName": "#Payment",
       "IsMain": true,
       "SelectStatement": "SELECT TOP (1005) WITH TIES [BatchDt], [BatchRowId], [PaymentId], [Sum], [Currency]\nFROM stage.Payment WHERE @Min \u003C BatchDt\nORDER BY BatchDt ASC;",
-      "CreateTempTableStatement": "CREATE TABLE #Payment (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [PaymentId] uniqueidentifier NOT NULL,     [Sum] decimal NOT NULL,     [Currency] char(3) NOT NULL);",
+      "CreateTempTableStatement": "CREATE TABLE #Payment (    [BatchDt] datetime2(3),     [BatchRowId] bigint,     [PaymentId] uniqueidentifier,     [Sum] decimal(20, 4),     [Currency] char(3));",
       "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #Payment"
     },
     {
@@ -15,7 +15,7 @@
       "TempTableName": "#PaymentItem",
       "IsMain": false,
       "SelectStatement": "SELECT [BatchDt], [BatchRowId], [ParentRowId], [Article], [Quantity], [Price] FROM stage.PaymentItem WHERE BatchDt BETWEEN @Min AND @Max;",
-      "CreateTempTableStatement": "CREATE TABLE #PaymentItem (    [BatchDt] datetime2 NOT NULL,     [BatchRowId] bigint NOT NULL,     [ParentRowId] bigint NOT NULL,     [Article] varchar(50) NOT NULL,     [Quantity] int NOT NULL,     [Price] decimal NOT NULL);",
+      "CreateTempTableStatement": "CREATE TABLE #PaymentItem (    [BatchDt] datetime2(3),     [BatchRowId] bigint,     [ParentRowId] bigint,     [Article] varchar(50),     [Quantity] int,     [Price] decimal(18, 2));",
       "SelectBatchStatement": "SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #PaymentItem"
     }
   ]
