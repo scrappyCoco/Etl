@@ -1,4 +1,5 @@
 using System.Diagnostics.Contracts;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Antlr4.StringTemplate;
@@ -329,12 +330,22 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             "CREATE TABLE <tempTableName> (<columns: {col | <col.line>}; separator=\", \">);"
         );
 
-        var columnLines = columns.Select(col =>
-            $"    [{col.Name}] {col.DataType}" +
-            (col.IsMax ? "(MAX)" :
-                col.Length > 0 ? $"({col.Length}{(col.Precision > 0 ? $", {col.Length}" : "")})" : "") +
-            (col.IsNullable ? " NULL" : " NOT NULL")
-        ).ToList();
+        List<string> columnLines = new List<string>(columns.Length);
+        StringBuilder columnsBuilder = new();
+        foreach (ColumnDefinition column in columns)
+        {
+            columnsBuilder.Append($"    [{column.Name}] {column.DataType}");
+            if (0 < column.Scale)
+            {
+                columnsBuilder.Append('(');
+                if (0 < column.Precision) columnsBuilder.Append(column.Precision).Append(", ");
+                columnsBuilder.Append(column.Scale).Append(')');
+            }
+            else if (0 < column.Length) columnsBuilder.Append($"({column.Length})");
+            else if (column.IsMax) columnsBuilder.Append("(MAX)");
+            columnLines.Add(columnsBuilder.ToString());
+            columnsBuilder.Clear();
+        }
 
         template.Add("tempTableName", tempTableName);
         template.Add("columns", columnLines.Select(line => new { line }).ToList());
@@ -366,6 +377,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
         if (columnDataType == null) return null;
 
         int length = (int)column.GetProperty(Column.Length);
+        int scale = (int)column.GetProperty(Column.Scale);
         int precision = (int)column.GetProperty(Column.Precision);
         bool isMax = (bool)column.GetProperty(Column.IsMax);
         string typeName = columnDataType.ObjectName.Parts.Last();
@@ -378,6 +390,7 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             Length = length,
             IsMax = isMax,
             IsNullable = nullable,
+            Scale = scale,
             Precision = precision
         };
     }
