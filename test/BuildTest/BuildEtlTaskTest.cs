@@ -10,8 +10,10 @@ public class BuildEtlTaskTest
 {
     private const string TestDataRoot = @"../../../../TestData/";
 
-    [Fact]
-    public void Test()
+    [Theory]
+    [InlineData("json")]
+    [InlineData("xml")]
+    public void Test(string configFileFormat)
     {
         const string outputEtlConfig = "/EtlCompilation/";
 
@@ -29,15 +31,16 @@ public class BuildEtlTaskTest
             FileSystemProvider = fileProvider,
             C4FEtlGeneratorSourceDacPacPath = Path.Combine(TestDataRoot, "StageDb"),
             C4FEtlGeneratorTargetDacPacPath = Path.Combine(TestDataRoot, "CoreDb"),
-            C4FEtlGeneratorOutputEtlConfig = outputEtlConfig
+            C4FEtlGeneratorOutputEtlConfig = outputEtlConfig,
+            C4fEtlGeneratorOutputFormat = configFileFormat
         };
 
         buildEltTask.Execute();
 
         Assert.Empty(logErrors);
 
-        string actualGeneratedEtlConfig = fileProvider.ReadAllText(Path.Combine(outputEtlConfig, "MergePayment.json"));
-        string expectedEtlConfig = File.ReadAllText(Path.Combine(TestDataRoot, "Expected/MergePayment.json"));
+        string actualGeneratedEtlConfig = fileProvider.ReadAllText(Path.Combine(outputEtlConfig, "MergePayment." + configFileFormat));
+        string expectedEtlConfig = File.ReadAllText(Path.Combine(TestDataRoot, "Expected/MergePayment." + configFileFormat));
         Assert.Equal(expectedEtlConfig, actualGeneratedEtlConfig);
     }
 }

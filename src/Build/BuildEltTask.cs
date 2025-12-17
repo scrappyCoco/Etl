@@ -2,6 +2,7 @@ using System.Diagnostics.Contracts;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Serialization;
 using Antlr4.StringTemplate;
 using Coding4Fun.Etl.Build.Services.Dacpac;
 using Coding4Fun.Etl.Build.Services.IO;
@@ -59,6 +60,19 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
     public string? C4FEtlGeneratorOutputEtlConfig { get; set; }
 
     /// <summary>
+    /// Output format for generated ETL configuration files.
+    /// </summary>
+    private enum OutputFormat
+    {
+        Xml,
+        Json
+    }
+    /// <summary>
+    /// Possible values: sql, json.
+    /// </summary>
+    public string? C4fEtlGeneratorOutputFormat { get; set; }
+
+    /// <summary>
     /// SQL model loader implementation for DACPAC file processing.
     /// </summary>
     internal ISqlModelLoader ModelLoader { get; set; } = new DacPacModelLoader();
@@ -92,6 +106,14 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
             return false;
         }
 
+        OutputFormat outputFormat = OutputFormat.Json;
+        if (!string.IsNullOrWhiteSpace(C4fEtlGeneratorOutputFormat)
+            && !Enum.TryParse<OutputFormat>(C4fEtlGeneratorOutputFormat, true, out outputFormat))
+        {
+            Log.LogError($"{C4fEtlGeneratorOutputFormat}) is not supported.");
+            return false;
+        }
+
         FileSystemProvider.CreateDirectory(C4FEtlGeneratorOutputEtlConfig);
 
         Log.LogMessage($"{nameof(C4FEtlGeneratorSourceDacPacPath)}: \"{C4FEtlGeneratorSourceDacPacPath}\"");
@@ -106,10 +128,23 @@ public class BuildEltTask : Microsoft.Build.Utilities.Task
 
         foreach (PipelineConfiguration pipelineConfiguration in pipelineConfigurations)
         {
-            string outputConfigFileName = pipelineConfiguration.ProcedureName + ".json";
-            string outputJsonPath = Path.Combine(C4FEtlGeneratorOutputEtlConfig, outputConfigFileName);
-            string json = JsonSerializer.Serialize(pipelineConfiguration, options);
-            FileSystemProvider.WriteAllText(outputJsonPath, json);
+            string outputConfigFileName = pipelineConfiguration.ProcedureName + "." + C4fEtlGeneratorOutputFormat;
+            string outputConfigFilePath = Path.Combine(C4FEtlGeneratorOutputEtlConfig, outputConfigFileName);
+            string? configContent = null;
+            if (outputFormat == OutputFormat.Json)
+            {
+                configContent = JsonSerializer.Serialize(pipelineConfiguration, options);
+            }
+            else
+            {
+                
+                XmlSerializer serializer = new(typeof(PipelineConfiguration));
+                using StringWriter stringWriter = new();
+                serializer.Serialize(stringWriter, pipelineConfiguration);
+                configContent = stringWriter.ToString();
+            }
+
+            FileSystemProvider.WriteAllText(outputConfigFilePath, configContent);
         }
 
         return true;
