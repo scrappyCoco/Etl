@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-16"?>
+<PipelineConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProcedureName>MergePayment</ProcedureName>
+  <EtlSql>BEGIN
+    INSERT INTO dbo.Currency (IsoCode)
+    SELECT Currency
+    FROM   #Payment
+    EXCEPT
+    SELECT IsoCode
+    FROM   dbo.Currency;
+    MERGE INTO dbo.Payment
+     AS Target
+    USING (SELECT Payment.PaymentId,
+                  Payment.Sum,
+                  Currency.CurrencyId,
+                  Payment.BatchDt AS ModifyDt
+           FROM   #Payment AS Payment
+                  INNER JOIN
+                  dbo.Currency
+                  ON Currency.IsoCode = Payment.Currency) AS Source ON Source.PaymentId = Target.PaymentId
+    WHEN NOT MATCHED THEN INSERT (PaymentId, Sum, CurrencyId, ModifyDt) VALUES (Source.PaymentId, Source.Sum, Source.CurrencyId, Source.ModifyDt)
+    WHEN MATCHED THEN UPDATE 
+    SET Target.Sum        = Source.Sum,
+        Target.CurrencyId = Source.CurrencyId;
+    DELETE Target
+    FROM   dbo.PaymentItem AS Target
+    WHERE  Target.PaymentId IN (SELECT ModifiedPayment.PaymentId
+                                FROM   #Payment AS ModifiedPayment);
+    INSERT INTO dbo.PaymentItem (PaymentId, Article, Quantity, Price)
+    SELECT Payment.PaymentId,
+           PaymentItem.Article,
+           PaymentItem.Quantity,
+           PaymentItem.Price
+    FROM   #PaymentItem AS PaymentItem
+           INNER JOIN
+           #Payment AS Payment
+           ON Payment.BatchDt = PaymentItem.BatchDt
+              AND Payment.BatchRowId = PaymentItem.ParentRowId;
+END</EtlSql>
+  <TableDefinitions>
+    <TableDefinition>
+      <StageTableName>stage.Payment</StageTableName>
+      <TempTableName>#Payment</TempTableName>
+      <IsMain>true</IsMain>
+      <SelectStatement>SELECT TOP (1005) WITH TIES [BatchDt], [BatchRowId], [PaymentId], [Sum], [Currency]
+FROM stage.Payment WHERE @Min &lt; BatchDt
+ORDER BY BatchDt ASC;</SelectStatement>
+      <CreateTempTableStatement>CREATE TABLE #Payment (    [BatchDt] datetime2(3),     [BatchRowId] bigint,     [PaymentId] uniqueidentifier,     [Sum] decimal(20, 4),     [Currency] char(3));</CreateTempTableStatement>
+      <SelectBatchStatement>SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #Payment</SelectBatchStatement>
+    </TableDefinition>
+    <TableDefinition>
+      <StageTableName>stage.PaymentItem</StageTableName>
+      <TempTableName>#PaymentItem</TempTableName>
+      <IsMain>false</IsMain>
+      <SelectStatement>SELECT [BatchDt], [BatchRowId], [ParentRowId], [Article], [Quantity], [Price] FROM stage.PaymentItem WHERE BatchDt BETWEEN @Min AND @Max;</SelectStatement>
+      <CreateTempTableStatement>CREATE TABLE #PaymentItem (    [BatchDt] datetime2(3),     [BatchRowId] bigint,     [ParentRowId] bigint,     [Article] varchar(50),     [Quantity] int,     [Price] decimal(18, 2));</CreateTempTableStatement>
+      <SelectBatchStatement>SELECT MIN(BatchDt) AS MinValue, MAX(BatchDt) AS MaxValue FROM #PaymentItem</SelectBatchStatement>
+    </TableDefinition>
+  </TableDefinitions>
+</PipelineConfiguration>

@@ -100,7 +100,13 @@ public class SqlServerTargetDb(string connectionString) : ITargetDb
             _connection, _transaction);
 
         insertLastOffsetCommand.Parameters.AddWithValue("@EtlName", etlName);
-        insertLastOffsetCommand.Parameters.AddWithValue("@LastOffset", lastOffset);
+        insertLastOffsetCommand.Parameters.Add(new SqlParameter
+        {
+            ParameterName = "@LastOffset",
+            Value = lastOffset, 
+            SqlDbType = SqlDbType.DateTime2,
+            Precision = 3
+        });
 
         await insertLastOffsetCommand.ExecuteNonQueryAsync();
     }

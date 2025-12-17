@@ -12,10 +12,12 @@
         <C4FEtlGeneratorTargetDacPacPath Condition="'$(C4FEtlGeneratorTargetDacPacPath)' == ''">$(SqlTargetPath)</C4FEtlGeneratorTargetDacPacPath>
         <C4FEtlGeneratorSourceDacPacPath Condition="'$(C4FEtlGeneratorSourceDacPacPath)' == ''">@(ArtifactReference->'%(HintPath)')</C4FEtlGeneratorSourceDacPacPath>
         <C4FEtlGeneratorOutputEtlConfig Condition="'$(C4FEtlGeneratorOutputEtlConfig)' == ''">$(TargetDir)Etl</C4FEtlGeneratorOutputEtlConfig>
+        <C4fEtlGeneratorOutputFormat Condition="'$(C4fEtlGeneratorOutputFormat)' == ''">json</C4fEtlGeneratorOutputFormat>
     </PropertyGroup>
 
     <BuildEltTask C4FEtlGeneratorSourceDacPacPath="$(C4FEtlGeneratorSourceDacPacPath)"
                   C4FEtlGeneratorTargetDacPacPath="$(C4FEtlGeneratorTargetDacPacPath)"
-                  C4FEtlGeneratorOutputEtlConfig="$(C4FEtlGeneratorOutputEtlConfig)" />
+                  C4FEtlGeneratorOutputEtlConfig="$(C4FEtlGeneratorOutputEtlConfig)"
+                  C4fEtlGeneratorOutputFormat="$(C4fEtlGeneratorOutputFormat)" />
   </Target>
 </Project>
